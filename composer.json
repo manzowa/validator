@@ -1,0 +1,23 @@
+{
+    "name": "wenzawa/validator",
+    "description": "Wenzawa\\Validator is a very small libray PHP",
+    "keywords": ["validator"],
+    "type": "libray",
+    "homepage": "https://github.com/wenzawa/validator",
+    "license" : "BSD-3-Clause",
+    "autoload": {
+        "psr-4": {
+            "Wenzawa\\Validator\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Christian SHUNGU",
+            "email": "christianshungu@gmail.com",
+            "role": "developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.4"
+    }
+}
