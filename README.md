@@ -24,5 +24,45 @@ To easily include Wenzawa\Validator into your project, install it via composer u
 | size(int $digit = 8)                                    | It allows you to check the size of the entered value.          |
 | validation(array $filters = [], string $verbe = "post") | ?.                                                             |
 
+
+```
+<?php 
+    $validator = new Wenzawa\Validator\Validator;
+
+    if ($validator->method()) {
+        $validator->validation(
+            [
+                "numero" => function () {
+                    Validator::isEmpty()->isNumber()->get();
+                },
+                "code" => function () {
+                    Validator::isEmpty()->isNumber()->size(4)->get();
+                },
+                "email" => function () {
+                    Validator::isEmpty()->get();
+                },
+                "confirm_email" =>  function () {
+                    Validator::isEmpty()->same("email")->get();
+                },
+                "password" => function () {
+                    Validator::isEmpty()->get();
+                },
+                "confirm_password" => function () {
+                    Validator::isEmpty()->get();
+                }
+            ]
+        );
+        if ($validator->failed()) {
+            echo "<pre>";
+            print_r($validator->errors());
+            echo "</pre>";
+        } else {
+            echo "<pre>";
+            print_r($validator->resultats());
+            echo "</pre>";
+        }
+    }
+?>
+```
 The simplest validation engine:
     - https://www.cshungu.fr
