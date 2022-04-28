@@ -1,0 +1,7 @@
+vendor/*
+example/*
+*.bat
+src/*
+docs/*
+README.md
+*.json
