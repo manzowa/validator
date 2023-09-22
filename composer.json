@@ -4,7 +4,7 @@
     "keywords": ["validator"],
     "type": "libray",
     "homepage": "https://github.com/manzowa/validator",
-    "license" : "BSD-3-Clause",
+    "license" : "MIT",
     "authors": [
         {
             "name": "Christian SHUNGU",
@@ -26,5 +26,8 @@
         "psr-4": {
             "Manzowa\\Validator\\": "src/"
         }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "10"
     }
 }
