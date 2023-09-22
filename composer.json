@@ -8,14 +8,13 @@
     "authors": [
         {
             "name": "Christian SHUNGU",
-            "email": "christianshungu@gmail.com",
-            "role": "developer"
+            "email": "christianshungu@gmail.com"
         }
     ],
     "require": {
         "php": ">=5.4"
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true,
     "autoload": {
         "psr-4": {
