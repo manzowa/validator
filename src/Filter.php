@@ -1,14 +1,14 @@
 <?php
 
-namespace Wenzawa\Validator;
+namespace Manzowa\Validator;
 
 /**
  * Class trait Filter
  * 
  * PHP version 8.0.0
  * 
- * @category Wenzawa\Validator
- * @package  Wenzawa\Validator
+ * @category Manzowa\Validator
+ * @package  Manzowa\Validator
  * @author   Christian Shungu <christianshungu@gmail.com>
  * @license  https://opensource.org/ BSD-3-Clause
  * @link     https://cshungu.fr

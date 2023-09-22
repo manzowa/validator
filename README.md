@@ -1,14 +1,8 @@
-# Wenzawa\Validator (Version: 0.0.1)
+### monzowa\manzowa-validator (Version: 0.0.1)
 --------------------------------------------------------------------
-Wenzawa\Validator is a very small validation library, with the easiest and most usable API we could possibly create.
+manzowa\manzowa-validator is a very small validation library, with the easiest and most usable API we could possibly create.
 
-# Install
---------------------------------------------------------------------
-To easily include Wenzawa\Validator into your project, install it via composer using the command line:
-`composer require wenzawa\Validator`
-
-
-## Functions
+#### Functions
 -----------------------
 
 | Function                                                | Description                                                    |
@@ -24,10 +18,9 @@ To easily include Wenzawa\Validator into your project, install it via composer u
 | size(int $digit = 8)                                    | It allows you to check the size of the entered value.          |
 | validation(array $filters = [], string $verbe = "post") | ?.                                                             |
 
-
 ```
 <?php 
-    $validator = new Wenzawa\Validator\Validator;
+    $validator = new Monzowa\Validator\Validator;
 
     if ($validator->method()) {
         $validator->validation(
@@ -65,4 +58,4 @@ To easily include Wenzawa\Validator into your project, install it via composer u
 ?>
 ```
 The simplest validation engine:
-    - https://www.cshungu.fr
+    - https://www.manzowa.com/validation

@@ -1,6 +1,6 @@
 <?php
 
-namespace Wenzawa\Validator;
+namespace Manzowa\Validator;
 
 use \Closure;
 use \ArrayAccess;
@@ -12,8 +12,8 @@ use \Countable;
  * 
  * PHP version 8.0.0
  * 
- * @category Wenzawa\Validator
- * @package  Wenzawa\Validator
+ * @category Manzowa\Validator
+ * @package  Manzowa\Validator
  * @author   Christian Shungu <christianshungu@gmail.com>
  * @license  https://opensource.org/ BSD-3-Clause
  * @link     https://cshungu.fr
@@ -195,7 +195,7 @@ class Validator implements ArrayAccess, Iterator, Countable
         $resultDiff = array_diff_assoc($posts, $this->resultats);
         $donnees = filter_var_array(
             $resultDiff,
-            FILTER_SANITIZE_STRING,
+            FILTER_SANITIZE_SPECIAL_CHARS,
             FILTER_FLAG_STRIP_HIGH
         );
         return array_merge($this->resultats, $donnees);
@@ -422,7 +422,7 @@ class Validator implements ArrayAccess, Iterator, Countable
         return strtoupper($_SERVER['REQUEST_METHOD']) === strtoupper($verbe);
     }
 
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         if (is_null($offset)) {
             $this->filters[] = $value;
@@ -438,7 +438,7 @@ class Validator implements ArrayAccess, Iterator, Countable
     {
         return isset($this->filters[$offset]);
     }
-    public function offsetUnset($offset)
+    public function offsetUnset($offset):void
     {
         unset($this->filters[$offset]);
         unset($this->keys[array_search($offset, $this->keys)]);
@@ -448,7 +448,7 @@ class Validator implements ArrayAccess, Iterator, Countable
     {
         return isset($this->filters[$offset]) ? $this->filters[$offset] : null;
     }
-    public function rewind()
+    public function rewind(): void
     {
         $this->position = 0;
     }
@@ -460,7 +460,7 @@ class Validator implements ArrayAccess, Iterator, Countable
     {
         return $this->keys[$this->position];
     }
-    public function next()
+    public function next(): void
     {
         ++$this->position;
     }

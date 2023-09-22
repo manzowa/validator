@@ -1,9 +1,9 @@
 {
-    "name": "wenzawa/validator",
-    "description": "Wenzawa\\Validator is a very small libray PHP",
+    "name": "manzowa/manzowa-validator",
+    "description": "Manzowa\\Validator is a very small libray PHP",
     "keywords": ["validator"],
     "type": "libray",
-    "homepage": "https://github.com/wenzawa/validator",
+    "homepage": "https://github.com/manzowa/validator",
     "license" : "BSD-3-Clause",
     "authors": [
         {
@@ -19,12 +19,12 @@
     "prefer-stable": true,
     "autoload": {
         "psr-4": {
-            "Wenzawa\\Validator\\": "src/"
+            "Manzowa\\Validator\\": "src/"
         }
     },
      "autoload-dev": {
         "psr-4": {
-            "Wenzawa\\Validator\\": "src/"
+            "Manzowa\\Validator\\": "src/"
         }
     }
 }
