@@ -1,6 +1,9 @@
 ### monzowa\manzowa-validator (Version: 0.0.1)
 --------------------------------------------------------------------
 manzowa\manzowa-validator is a very small validation library, with the easiest and most usable API we could possibly create.
+[![Source Code](https://manzowa.com/images/source.png)]
+[![Latest Version](https://manzowa.com/images/source.packagist.png)]
+[![Software License](https://manzowa.com/images/license.png)]
 
 #### Functions
 -----------------------
