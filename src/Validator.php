@@ -449,11 +449,15 @@ class Validator implements ArrayAccess, Iterator, Countable
     {
         $this->position = 0;
     }
-    public function current():string
+    public function current():mixed
     {
+        if (isset($this->filters[$this->keys[$this->position]])) {
+            return $this->filters[$this->keys[$this->position]];
+        }
         return $this->filters[$this->keys[$this->position]];
+       
     }
-    public function key():string
+    public function key(): mixed
     {
         return $this->keys[$this->position];
     }
