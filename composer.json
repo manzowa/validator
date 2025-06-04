@@ -34,5 +34,9 @@
             "type": "composer",
             "url": "https://packagist.org"
         }
+    },
+    "scripts": {
+        "test": "@php vendor/bin/phpunit --bootstrap vendor/autoload.php tests/ValidatorTest.php"
     }
+
 }

@@ -372,11 +372,8 @@ class Validator implements ArrayAccess, Iterator, Countable
      */
     public static function __callStatic($name, array $args = [])
     {
-        if (!method_exists(new static, $name)) {
-            return call_user_func_array(
-                [new static, $name],
-                $args
-            );
+        if (!method_exists(new static, $name) && is_array($args)) {
+            return call_user_func_array([new static, $name], $args);
         }
     }
 
@@ -422,7 +419,7 @@ class Validator implements ArrayAccess, Iterator, Countable
         return strtoupper($_SERVER['REQUEST_METHOD']) === strtoupper($verbe);
     }
 
-    public function offsetSet($offset, $value): void
+    public function offsetSet(mixed $offset, mixed $value): void
     {
         if (is_null($offset)) {
             $this->filters[] = $value;
@@ -434,7 +431,7 @@ class Validator implements ArrayAccess, Iterator, Countable
             }
         }
     }
-    public function offsetExists($offset)
+    public function offsetExists(mixed $offset): bool
     {
         return isset($this->filters[$offset]);
     }
@@ -444,7 +441,7 @@ class Validator implements ArrayAccess, Iterator, Countable
         unset($this->keys[array_search($offset, $this->keys)]);
         $this->keys = array_values($this->keys);
     }
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset): bool
     {
         return isset($this->filters[$offset]) ? $this->filters[$offset] : null;
     }
@@ -452,11 +449,11 @@ class Validator implements ArrayAccess, Iterator, Countable
     {
         $this->position = 0;
     }
-    public function current()
+    public function current():string
     {
         return $this->filters[$this->keys[$this->position]];
     }
-    public function key()
+    public function key():string
     {
         return $this->keys[$this->position];
     }
@@ -464,7 +461,7 @@ class Validator implements ArrayAccess, Iterator, Countable
     {
         ++$this->position;
     }
-    public function valid()
+    public function valid(): bool
     {
         return isset($this->keys[$this->position]);
     }
