@@ -28,5 +28,11 @@
     },
     "require-dev": {
         "phpunit/phpunit": "10"
+    },
+     "repositories": {
+        "packagist": {
+            "type": "composer",
+            "url": "https://packagist.org"
+        }
     }
 }
