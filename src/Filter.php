@@ -2,8 +2,10 @@
 
 namespace Manzowa\Validator;
 
+use \Manzowa\Validator\Utils\UploadedFile;
+
 /**
- * Class trait Filter
+ * Trait Filter
  * 
  * PHP version 8.0.0
  * 
@@ -11,71 +13,76 @@ namespace Manzowa\Validator;
  * @package  Manzowa\Validator
  * @author   Christian Shungu <christianshungu@gmail.com>
  * @license  https://opensource.org/ BSD-3-Clause
- * @link     https://cshungu.fr
+ * @link     https://manzowa.com
  */
 trait Filter
 {
     /**
-     * Method isEmpty
-     * 
-     * It allows you to check if the field is empty.
-     * 
-     * @return self;
+     * Check if the value is empty and add an error if so.
+     *
+     * @return self
      */
     public function isEmpty(): self
     {
-        if (empty($this->getValeur()) && $this->isNotAlreadyError()) {
+        if (empty($this->getValue()) && $this->isNotAlreadyError()) {
             $this->addError($this->getField(), $this->getMessage('empty'));
         }
         return $this;
     }
     /**
-     * Method isNumber
-     * 
-     * It is used to check if the type of the value entered is number
-     * 
-     * @return self;
+     * Check if the value is empty and add an error if so.
+     *
+     * @return self
+     */
+    public function isRequired(): self
+    {
+        if (empty($this->getValue()) && $this->isNotAlreadyError()) {
+            $this->addError($this->getField(), $this->getMessage('empty'));
+        }
+        return $this;
+    }
+
+    /**
+     * Check if the value is a valid number and add an error if not.
+     *
+     * @return self
      */
     public function isNumber(): self
     {
-        if (!is_numeric($this->getValeur()) && $this->isNotAlreadyError()) {
+        if (!is_numeric($this->getValue()) && $this->isNotAlreadyError()) {
             $this->addError($this->getField(), $this->getMessage('number'));
         }
         return $this;
     }
 
     /**
-     * Method size
-     * 
-     * It allows you to check the size of the entered value.
-     * 
-     * @param int $digit - Nombre 
-     * 
-     * @return self;
+     * Check if the value's size matches the specified size.
+     *
+     * @param int $digit Expected size of the value
+     *
+     * @return self
      */
     public function size(int $digit = 8): self
     {
-        $size = (int) mb_strlen((string) $this->getValeur());
-        if (($size !== $digit) && $this->isNotAlreadyError()) {
+        $size = (int) mb_strlen((string) $this->getValue());
+        if ($size !== $digit && $this->isNotAlreadyError()) {
             $this->addError($this->getField(), $this->getMessage('size'));
         }
         return $this;
     }
 
     /**
-     * Method same
-     * 
-     * It allows you to compare the value of two fields.
-     * 
-     * @param int $name -  
-     * 
-     * @return self;
+     * Check if the value matches the specified field.
+     *
+     * @param string $name Field to compare with
+     *
+     * @return self
      */
     public function same(string $name = ""): self
     {
         $tampon = $this->getTampon($name);
-        if ((strcmp($this->getValeur(), trim($tampon)) !== 0)
-            && ($this->isNotAlreadyError())
+        if (strcmp($this->getValue(), trim($tampon)) !== 0 
+            && $this->isNotAlreadyError()
         ) {
             $this->addError($this->getField(), $this->getMessage('confirm'));
         }
@@ -83,53 +90,162 @@ trait Filter
     }
 
     /**
-     * Method isEmail
-     * 
-     * It allows you to check if the e-mail address entered is valid.
-     * 
-     * @return self;
+     * Check if the value is a valid email.
+     *
+     * @return self
      */
     public function isEmail(): self
     {
-        $email = filter_var($this->getValeur(), FILTER_VALIDATE_EMAIL);
-        if (!$email && $this->isNotAlreadyError()) {
+        if (!filter_var($this->getValue(), FILTER_VALIDATE_EMAIL)
+             && $this->isNotAlreadyError()
+        ) {
             $this->addError($this->getField(), $this->getMessage('invalid'));
         }
         return $this;
     }
+
     /**
-     * Method isFile
+     * Validate isFile upload.
      * 
-     * @param int $max_size_file - 
+     * @param int $max_size_file -
+     * @param array $mimes
+     * 
      *
-     * @return void
+     * @return self
      */
-    public function isFiles(int $max_size_file = 1048576)
-    {
-        $rows = [];
-        if (!empty($_FILES)) {
-            foreach ($_FILES as $key => $files) {
+    public function isFiles(
+        int $max_size_file = 1048576, 
+        array $mimes = []
+    ): self {
+        if (empty($_FILES)) {
+            return $this;
+        }
+        $rowFile = [];
+        foreach ($_FILES as $files) {
+            $isMultiArray = is_array($files['name'])?? false;
+            if ($isMultiArray) {
                 $counter = count($files['name']);
                 for ($i = 0; $i < $counter; $i++) {
-                    if ($files['size'][$i] > $max_size_file && !$this->hasError("max_file_size")) {
+                    $uploadedFiled = new UploadedFile(
+                        $files['tmp_name'][$i],
+                        $files['size'][$i],
+                        $files['error'][$i],
+                        $files['name'][$i],
+                        $files['type'][$i]
+                    );
+                    // Check max file size
+                    if ($uploadedFiled->getSize() > $max_size_file 
+                        && !$this->hasError("max_file_size")
+                    ) {
                         $this->addError(
                             "max_file_size",
                             $this->getMessage("maxSizeFile", $max_size_file)
                         );
                         continue;
-                    } else {
-                        $file = [
-                            "name"     => $files['name'][$i],
-                            "type"     => $files['type'][$i],
-                            "tmp_name" => $files['tmp_name'][$i],
-                            "error"    => $files['error'][$i],
-                            "size"     => $files['size'][$i],
-                        ];
                     }
-                    $rows[$key][] = $file;
+                    // Check file MIME type
+                    $mime = $uploadedFiled->getMimeTypeFromFile();
+                    if (count($mimes) > 0 && !in_array($mime, $mimes)) {
+                        $this->addError(
+                            "invalid_file_type",
+                            $this->getMessage("invalidFileType")
+                        );
+                        continue;
+                    }
+                    $rowFile[] = $uploadedFiled;
                 }
+            } else {
+                $uploadedFiled = new UploadedFile(
+                    $files['tmp_name'],
+                    $files['size'],
+                    $files['error'],
+                    $files['name'],
+                    $files['type']
+                );
+                // Check max file size
+                if ($uploadedFiled->getSize() > $max_size_file 
+                    && !$this->hasError("max_file_size")
+                ) {
+                    $this->addError(
+                        "max_file_size",
+                        $this->getMessage("maxSizeFile", $max_size_file)
+                    );
+                    continue;
+                }
+                // Check file MIME type
+                $mime = $uploadedFiled->getMimeTypeFromFile();
+                if (count($mimes) > 0 && !in_array($mime, $mimes)) {
+                    $this->addError(
+                        "invalid_file_type",
+                        $this->getMessage("invalidFileType")
+                    );
+                    continue;
+                }
+                $rowFile[] = $uploadedFiled;
             }
-            $this->resultats['files'] = $rows;
+        }  
+        
+        $this->inputs[$this->getField()] = $rowFile;
+        return $this;
+    }
+
+    /**
+     * Add an error message for a given field
+     *
+     * @param string $field   The field name
+     * @param string $message The error message
+     *
+     * @return self
+     */
+    protected function addError(string $field, string $message): self
+    {
+        if ($field && $this->isNotAlreadyError()) {
+            $this->errors[$field] = $this->match($message, $field);
         }
+        return $this;
+    }
+
+    /**
+     * Check if there are any errors for the current field.
+     *
+     * @return bool
+     */
+    protected function isNotAlreadyError(): bool
+    {
+        return !$this->hasError($this->getField());
+    }
+
+    /**
+     * Check if the field has any errors.
+     *
+     * @param string $field Field name to check
+     *
+     * @return bool
+     */
+    protected function hasError(string $field): bool
+    {
+        return isset($this->errors[$field]);
+    }
+
+    /**
+     * Replace placeholders in the error message with actual values.
+     *
+     * @param string $subject The error message with placeholders
+     * @param string $replace The value to replace placeholders with
+     * @param string $pattern The pattern to search for placeholders
+     *
+     * @return string
+     */
+    public function match(
+        string $subject, 
+        string $replace, 
+        string $pattern = '/{{input}}/i'
+    ): string {
+        if (preg_match($pattern, $subject, $matches, PREG_OFFSET_CAPTURE)) {
+            foreach ($matches as $match) {
+                $subject = str_replace($match[0], $replace, $subject);
+            }
+        }
+        return $subject;
     }
 }

@@ -7,116 +7,172 @@ use \ArrayAccess;
 use \Iterator;
 use \Countable;
 
+
 /**
  * Class Validator
- * 
+ *
+ * A flexible validation framework that allows dynamic field validation, error handling,
+ * custom methods, and supports various HTTP request methods.
+ *
  * PHP version 8.0.0
- * 
+ *
  * @category Manzowa\Validator
  * @package  Manzowa\Validator
  * @author   Christian Shungu <christianshungu@gmail.com>
  * @license  https://opensource.org/ BSD-3-Clause
- * @link     https://cshungu.fr
+ * @link     https://manzowa.com
  */
 class Validator implements ArrayAccess, Iterator, Countable
 {
     use Messages;
     use Filter;
-    /**
-     * Variable of  errors
-     *
-     * @var array
-     */
-    protected $errors    = [];
-    /**
-     * Variable of methods
-     *
-     * @var array
-     */
-    protected $methods   = [];
-    protected $resultats = [];
-    protected $filters   = [];
-    protected $keys      = [];
-    protected $inputs    = [];
-    protected $field     = "";
-    protected $position  = 0;
-    protected $verbe     = "post";
+
+    protected array $rules = []; 
+
+    protected ?object $object;
+
+    /** @var array $errors Holds error messages for each field */
+    protected array $errors = [];
+
+    /** @var array $methods Stores dynamically bound methods */
+    protected array $methods = [];
+
+    /** @var array $results Stores the validated field values */
+    protected array $results = [];
+
+    /** @var array $filters Stores the field validation rules */
+    protected array $filters = [];
+
+    /** @var array $keys Stores keys (field names) for filters */
+    protected array $keys = [];
+
+    /** @var array $inputs Stores input values for validation */
+    protected array $inputs = [];
+
+    /** @var string $field Stores the current field being processed */
+    protected string $field = "";
+
+    /** @var int $position Current position in the iterator */
+    protected int $position = 0;
+
+    /** @var string $requestMethod Current HTTP request method (e.g., POST, GET) */
+    protected string $requestMethod = "post";
+
 
     /**
-     * Method __construct
-     * 
-     * @param object|null $objet - 
+     * Constructor method to initialize the Validator.
      *
-     * @return void
+     * @param object|null $object Optional object to bind validation logic to
+     * @param array $rules Optional validation rules per field
      */
-    public function __construct(protected $objet = null)
+    public function __construct(array $rules = [], ?object $object = null)
     {
+        $this->rules  = $rules;
+        $this->object = $object;
         $this->position = 0;
-        $this->keys     = array_keys($this->filters);
+        $this->keys = array_keys($this->filters);
+    }
+    /**
+     * Set validation rules for specific fields.
+     *
+     * @param string $field The field name
+     * @param array  $rules The validation rules
+     *
+     * @return self
+     */
+    public function setRules(string $field, array $rules): self
+    {
+        $this->rules[$field] = $rules;
+        return $this;
+    }
+    /**
+     * Get validation rules for a specific field.
+     *
+     * @param string $field The field name
+     *
+     * @return array The validation rules for the field
+     */
+    public function getRules(string $field): array
+    {
+        return $this->rules[$field] ?? [];
     }
 
     /**
-     * Method filter
-     * 
-     * @param string $verbe -
+     * Set the HTTP method for filtering (POST, GET, etc.).
      *
-     * @return void
+     * @param string $method The HTTP method (default: "post")
+     *
+     * @return self
      */
-    public function filter(string $verbe = "post"): self
+    public function filter(string $method = "post"): self
     {
-        $this->setVerbe($verbe);
+        $this->setRequestMethod($method);
         foreach ($this as $key => $callback) {
-            $this->setField($this->key());
+            $this->setField($key);
             if ($this->isClosure($callback)) {
-                $method = "method" . ucfirst(trim($key));
-                $this->bindMethod($method, $callback);
+                $methodName = "method" . ucfirst(trim($key));
+                $this->bindMethod($methodName, $callback);
                 $this->addInput($key);
-                $this->{$method}();
+                $this->{$methodName}();
             }
+          
         }
         return $this;
     }
 
     /**
-     * Method set
-     * 
-     * @param string $field = Nom Champs
-     * 
-     * @return mixed;
+     * Set the current field being validated.
+     *
+     * @param string $field The field name
+     *
+     * @return self
      */
-    protected function setField($field): self
+    protected function setField(string $field): self
     {
         if ($field) {
             $this->field = $field;
         }
         return $this;
     }
+
     /**
-     * Method addFilter
-     * 
-     * It allows to add the filter and retrieves the give.
-     * 
-     * via [POST, GET, etc...]
-     * 
-     * @param string $name -
+     * Add input data to the filter.
+     * This method pulls data for a specific field from the current request method.
      *
-     * @return void
+     * @param string $name The field name
+     *
+     * @return self
      */
     protected function addInput(string $name): self
     {
         if ($name) {
-            $this->inputs[$name] = filter_input(
-                $this->getVerbe(),
-                $name
+            $inputValue = $this->inputed(
+                $this->getRequestMethod(),
+                $name,
+                FILTER_SANITIZE_SPECIAL_CHARS
             );
+            $this->inputs[$name] = $inputValue;
         }
         return $this;
     }
+    /**
+     * setInputs data to the filter.
+     *
+     * @param array $inputs
+     *
+     * @return self
+     */
+    protected function setInputs(array $inputs = []): self
+    {
+        $this->inputs = $inputs;
+        return $this;
+    }
+
 
     /**
-     * Method getField
-     * 
-     * @return string;
+     * Get the current field name being processed.
+     *
+     * @return string The field name
      */
     protected function getField(): string
     {
@@ -124,60 +180,57 @@ class Validator implements ArrayAccess, Iterator, Countable
     }
 
     /**
-     * Method getValeur
-     * 
-     * @return mixed;
+     * Get the value for the current field.
+     * Returns an empty string if the field is not set.
+     *
+     * @return mixed The value of the current field
      */
-    protected function getValeur()
+    protected function getValue()
     {
-        return  $this->inputs[$this->getField()] ?? "";
+        return $this->inputs[$this->getField()] ?? "";
     }
 
     /**
-     * Method getTampon
-     * 
-     * It allows you to return the value of any field.
-     * 
-     * @param string $name - 
-     * 
-     * @return string;
+     * Get the value for a specific field (or "tampon").
+     *
+     * @param string|null $name The field name (optional)
+     *
+     * @return string The field value
      */
     protected function getTampon(?string $name = ""): string
     {
-        $tampo = "";
-        if (!empty($name)) {
-            $tampo = $this->inputs[$name] ?? "";
-        }
-        return $tampo;
+        return $name ? ($this->inputs[$name] ?? "") : "";
     }
 
     /**
-     * Method getMessage
-     * 
-     * @param string $name - Get error message
-     * 
-     * @return mixed;
+     * Get the error message associated with a given field.
+     *
+     * @param string|null $name The field name (optional)
+     *
+     * @return string The error message for the field
      */
-    protected function getMessage(?string $name = "")
+    protected function getMessage(?string $name = ""): string
     {
-        return  $this->messages[$name] ?? "";
+        return $this->messages[$name] ?? "";
     }
+
     /**
-     * Method get
-     * 
-     * @return mixed;
+     * Add the field value to the results if no errors are found.
+     *
+     * @return self
      */
     protected function get(): self
     {
-        if (count($this->errors) === 0) {
-            $this->resultats[$this->getField()] = $this->getValeur();
+        if (empty($this->errors)) {
+            $this->results[$this->getField()] = $this->getValue();
         }
         return $this;
     }
+
     /**
-     * Method failed
+     * Check if the validation failed (i.e., if any errors exist).
      *
-     * @return boolean
+     * @return bool True if validation failed, false otherwise
      */
     public function failed(): bool
     {
@@ -185,96 +238,87 @@ class Validator implements ArrayAccess, Iterator, Countable
     }
 
     /**
-     * Method resultats
+     * Get the results of the validation, merging them with sanitized data.
      *
-     * @return void
+     * @return array The validation results (field names and their values)
      */
-    public function resultats(): array
+    public function results(): array
     {
-        $posts = filter_input_array($this->getVerbe());
-        $resultDiff = array_diff_assoc($posts, $this->resultats);
-        $donnees = filter_var_array(
-            $resultDiff,
-            FILTER_SANITIZE_SPECIAL_CHARS,
-            FILTER_FLAG_STRIP_HIGH
-        );
-        return array_merge($this->resultats, $donnees);
+        return $this->results;
     }
 
     /**
-     * Method errors
+     * Get the validation errors as an associative array.
      *
-     * @return void
+     * @return array An array of errors where keys are field names and values are error messages
      */
     public function errors(): array
     {
         return $this->errors;
     }
+
     /**
-     * Method addError
-     * 
-     * @param string $name    -
-     * @param string $message -
+     * Add an error message for a given field.
      *
-     * @return void
+     * @param string $name    The field name
+     * @param string $message The error message
+     *
+     * @return self
      */
-    protected function addError($name, $message): self
+    protected function addError(string $name, string $message): self
     {
         if ($name) {
             $this->errors[$name] = $this->match($message, $name);
         }
         return $this;
     }
+
     /**
-     * Method hasErro
-     * 
-     * @param string $name -
+     * Check if a specific field has an error.
      *
-     * @return boolean
-     */
-    protected function hasError($name): bool
-    {
-        return array_key_exists($name, $this->errors);
-    }
-    /**
-     * Method getVerbe
+     * @param string $name The field name
      *
-     * @return string
+     * @return bool True if the field has an error, false otherwise
      */
-    public function getVerbe(): string
+    protected function hasError(string $name): bool
     {
-        $resultats = "";
-        try {
-            $resultats = match ($this->verbe) {
-                'post'   => INPUT_POST,
-                'get'    => INPUT_GET,
-                'cookie' => INPUT_COOKIE,
-                'server' => INPUT_SERVER,
-                'env'    => INPUT_ENV
-            };
-        } catch (\UnhandledMatchError $e) {
-            throw new \Exception($e->getMessage());
-        }
-        return $resultats;
+        return isset($this->errors[$name]);
     }
+
     /**
-     * Method getVerbe
-     * 
-     * @param string $verbe - 
+     * Get the current request method (POST, GET, etc.).
+     *
+     * @return string The HTTP request method
+     */
+    public function getRequestMethod(): string
+    {
+        return match ($this->requestMethod) {
+            'post' => INPUT_POST,
+            'get' => INPUT_GET,
+            'cookie' => INPUT_COOKIE,
+            'server' => INPUT_SERVER,
+            'env' => INPUT_ENV,
+            default => throw new \Exception('Unsupported request method'),
+        };
+    }
+
+    /**
+     * Set the request method for filtering.
+     *
+     * @param string $method The HTTP request method (e.g., POST, GET)
      *
      * @return self
      */
-    protected function setVerbe(string $verbe = "post"): self
+    protected function setRequestMethod(string $method): self
     {
-        if ($verbe) {
-            $this->verbe = $verbe;
-        }
+        $this->requestMethod = $method;
         return $this;
     }
+
     /**
-     * Method ready
+     * Check if the validation error for the current field has already been set.
      *
-     * @return void
+     * @return bool True if no error exists for the field, false otherwise
      */
     protected function isNotAlreadyError(): bool
     {
@@ -282,143 +326,90 @@ class Validator implements ArrayAccess, Iterator, Countable
     }
 
     /**
-     * Method bindMethod
-     * 
-     * It allows linked the external function to class
+     * Bind a closure method to the Validator class.
      *
-     * @param string  $methodName - 
-     * @param Closure $method     - 
-     * 
-     * @return mixed
+     * @param string $methodName The name of the method
+     * @param Closure $method The closure to bind
+     *
+     * @return self
      */
     public function bindMethod(string $methodName, Closure $method): self
     {
         if (!$this->isClosure($method)) {
-            throw new \InvalidArgumentException(
-                'Second param must be callable'
-            );
-        } else {
-            $method = Closure::fromCallable($method);
-            $this->methods[$methodName] = Closure::bind(
-                $method,
-                $this,
-                get_class()
-            );
+            throw new \InvalidArgumentException('Second param must be callable');
         }
 
+        $this->methods[$methodName] = Closure::bind($method, $this, get_class());
         return $this;
     }
-    /**
-     * Method match
-     * 
-     * @param string $subject - 
-     * @param string $replace - 
-     * @param string $pattern - 
-     * 
-     * @return string
-     */
-    public function match(
-        string $subject,
-        string $replace,
-        string $pattern = '/input/i'
-    ): string {
-        $stringSubject = "";
-        if (preg_match($pattern, $subject,  $matches, PREG_OFFSET_CAPTURE)) {
-            $tabCount = count($matches);
-            for ($i = 0; $i < $tabCount; $i++) {
-                $matche = $matches[$i];
-                if (is_array($matche) && 2 === count($matche)) {
-                    $input = $matche[0];
-                    $stringSubject = str_replace(
-                        "{{" . $input . "}}",
-                        $replace,
-                        $subject
-                    );
-                }
-            }
-        } else {
-            $stringSubject = $subject;
-        }
-        return $stringSubject;
-    }
 
     /**
-     * Method __call
+     * Handle dynamic method calls for the Validator class.
      *
-     * @param mixed $methodName - 
-     * @param mixed $args       - 
-     * 
-     * @return mixed
+     * @param string $methodName The method name
+     * @param array $args The arguments for the method
+     *
+     * @return mixed The result of the method call
+     *
+     * @throws \RuntimeException If the method does not exist
      */
     public function __call($methodName, array $args = [])
     {
         if (isset($this->methods[$methodName])) {
-            return call_user_func_array(
-                $this->methods[$methodName],
-                $args
-            );
+            return call_user_func_array($this->methods[$methodName], $args);
         }
-        throw new  \RunTimeException(
-            'There is no method with the given name to call'
-        );
+        throw new \RuntimeException('Method not found');
     }
     /**
-     * From
-     * 
-     * @param string $name -
-     * @param string $args -
-     * 
-     * @return mixed
+     * Handle dynamic static method calls for the Validator class.
+     *
+     * @param string $name The static method name
+     * @param array $args The arguments for the method
+     *
+     * @return mixed The result of the method call
      */
     public static function __callStatic($name, array $args = [])
     {
-        if (!method_exists(new static, $name) && is_array($args)) {
+        if (method_exists(new static, $name) && is_array($args)) {
             return call_user_func_array([new static, $name], $args);
         }
     }
-
     /**
-     * Method isClosure
+     * Check if the value is a closure.
      *
-     * @param mixed $t - 
-     * 
-     * @return void
+     * @param mixed $value The value to check
+     *
+     * @return bool True if the value is a closure, false otherwise
      */
-    protected function isClosure($t)
+    protected function isClosure($value): bool
     {
-        return $t instanceof \Closure;
+        return $value instanceof \Closure;
     }
-
     /**
-     * Method Validation
-     * 
-     * @param array  $filters - 
-     * @param string $verbe   -
-     * 
-     * @return void
+     * Validate input fields based on the provided filters.
+     *
+     * @param array $filters The list of filters to apply
+     * @param string $method The HTTP method (e.g., POST, GET) (default: POST)
      */
-    public function validation(array $filters = [], string $verbe = "post"): void
+    public function validation(array $filters = [], string $method = "post"): void
     {
-        if (is_array($filters) && count($filters) > 0) {
-            foreach ($filters as $key => $filter) {
-                $this[$key] = $filter;
-            }
-            $this->filter($verbe);
+        foreach ($filters as $key => $filter) {
+            $this[$key] = $filter;
         }
+        $this->filter($method);
     }
 
     /**
-     * Method method
-     * 
-     * @param string $verbe -
-     * 
-     * @return boolean
+     * Check if the current request method matches the expected method.
+     *
+     * @param string $method The expected HTTP method
+     *
+     * @return bool True if the methods match, false otherwise
      */
-    public function method(string $verbe = "post")
+    public function method(string $method = "post"): bool
     {
-        return strtoupper($_SERVER['REQUEST_METHOD']) === strtoupper($verbe);
+        return strtoupper($_SERVER['REQUEST_METHOD']) === strtoupper($method);
     }
-
     public function offsetSet(mixed $offset, mixed $value): void
     {
         if (is_null($offset)) {
@@ -435,45 +426,158 @@ class Validator implements ArrayAccess, Iterator, Countable
     {
         return isset($this->filters[$offset]);
     }
-    public function offsetUnset($offset):void
+    public function offsetUnset(mixed $offset): void
     {
         unset($this->filters[$offset]);
         unset($this->keys[array_search($offset, $this->keys)]);
         $this->keys = array_values($this->keys);
     }
-    public function offsetGet(mixed $offset): bool
+    public function offsetGet(mixed $offset): mixed
     {
-        return isset($this->filters[$offset]) ? $this->filters[$offset] : null;
+        return $this->filters[$offset] ?? null;
     }
+    // Iterator methods
     public function rewind(): void
     {
         $this->position = 0;
     }
-    public function current():mixed
+
+    public function current(): mixed
     {
-        if (isset($this->filters[$this->keys[$this->position]])) {
-            return $this->filters[$this->keys[$this->position]];
-        }
-        return $this->filters[$this->keys[$this->position]];
-       
+        return $this->filters[$this->keys[$this->position]] ?? null;
     }
+
     public function key(): mixed
     {
         return $this->keys[$this->position];
     }
+
     public function next(): void
     {
         ++$this->position;
     }
+
     public function valid(): bool
     {
         return isset($this->keys[$this->position]);
     }
+    // Countable method
     public function count(): int
     {
         return count($this->keys);
     }
+    /**
+     * Validate the input fields based on the defined rules.
+     * 
+     * @param array $filters The list of filters to apply
+     * @param string $method The HTTP method (e.g., POST, GET) (default: POST)
+     *
+     * @return self
+     */
+    public function validate(array $filters = [], string $method = "post"): self
+    {
+        if (count($filters)> 0) {
+            foreach ($filters as $key => $filter) {
+                $this[$key] = $filter;
+            }
+            $this->filter($method);
 
-    public function __destruct(){
+        } else {
+            foreach ($this->rules as $field => $rules) 
+            {
+                $this->setField($field);
+                foreach ($rules as $rule => $param) {
+                    $this->applyRule($field, $rule, $param);
+                }
+            }
+        }
+        return $this;
+    }
+     /**
+     * Apply a specific rule to the field.
+     *
+     * @param string $field The field name
+     * @param string $rule The rule to apply (e.g., "required", "minLength")
+     * @param mixed $param The parameter for the rule (e.g., minimum length)
+     */
+    protected function applyRule(string $field, string $rule, $param): void
+    {
+        switch ($rule) {
+            case 'required':
+                if (empty($this->getValue())) {
+                    $this->addError($field, $this->getMessage('empty'));
+                }
+                break;
+
+            case 'minLength':
+                if (strlen($this->getValue()) < $param) {
+                    $this->addError($field, $this->getMessage('minLength', ['min' => $param]));
+                }
+                break;
+
+            case 'maxLength':
+                if (strlen($this->getValue()) > $param) {
+                    $this->addError($field, $this->getMessage('maxLength', ['max' => $param]));
+                }
+                break;
+
+            case 'numeric':
+                if (!is_numeric($this->getValue())) {
+                    $this->addError($field, $this->getMessage('number'));
+                }
+                break;
+
+            case 'email':
+                if (!filter_var($this->getValue(), FILTER_VALIDATE_EMAIL)) {
+                    $this->addError($field, $this->getMessage('invalid'));
+                }
+                break;
+
+            case 'regex':
+                if (!preg_match($param, $this->getValue())) {
+                    $this->addError($field, $this->getMessage('invalid'));
+                }
+                break;
+
+            default:
+                // Handle custom validation logic here
+                break;
+        }
+    }
+    // Destructor
+    public function __destruct()
+    {
+    }
+
+    public function inputed($inputType, $key, $filter = FILTER_DEFAULT) 
+    {
+        $raw_array = filter_input($inputType, $key, $filter, FILTER_REQUIRE_ARRAY);
+        if ($raw_array !== null && $raw_array !== false) {
+            return $raw_array;
+        }
+        $raw = filter_input($inputType, $key, $filter);
+        if ($raw !== null && $raw !== false) {
+            return $raw;
+        }
+        return null;
+    }
+
+    public function compareData(array $form, array $origin): array
+    {
+        $normalize = function(array $data): array {
+            foreach ($data as $key => $value) {
+                if (is_array($value)) {
+                    $data[$key] = implode(',', $value);
+                }
+            }
+            return $data;
+        };
+
+        $normalizedForm   = $normalize($form);
+        $normalizedOrigin = $normalize($origin);
+
+        return array_diff_assoc($normalizedForm, $normalizedOrigin);
     }
 }
+
+?>

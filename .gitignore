@@ -2,3 +2,4 @@ vendor/*
 exemple/*
 *.bat
 *.cache
+run.bat

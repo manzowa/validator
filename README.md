@@ -16,17 +16,17 @@ manzowa\manzowa-validator is a very small validation library, with the easiest a
 | isEmpty()                                               | It allows you to check if the field is empty                   |
 | isNumber()                                              | It is used to check if the type of the value entered is number |
 | method()                                                | boolean.                                                       |
-| resultats()                                             | Get resultats.                                                 |
+| resuts()                                             | Get results.                                                 |
 | same(string $name = "")                                 | It allows you to compare the value of two fields.              |
 | size(int $digit = 8)                                    | It allows you to check the size of the entered value.          |
-| validation(array $filters = [], string $verbe = "post") | ?.                                                             |
+| validate(array $filters = [], string $verbe = "post") | ?.                                                             |
 
 ```
 <?php 
     $validator = new Monzowa\Validator\Validator;
 
     if ($validator->method()) {
-        $validator->validation(
+        $validator->validate(
             [
                 "numero" => function () {
                     Validator::isEmpty()->isNumber()->get();
@@ -54,7 +54,7 @@ manzowa\manzowa-validator is a very small validation library, with the easiest a
             echo "</pre>";
         } else {
             echo "<pre>";
-            print_r($validator->resultats());
+            print_r($validator->results());
             echo "</pre>";
         }
     }
