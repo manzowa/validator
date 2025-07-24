@@ -3,6 +3,7 @@
 namespace Manzowa\Validator;
 
 use \Manzowa\Validator\Utils\UploadedFile;
+use \Manzowa\Validator\Type\FileType;
 
 /**
  * Trait Filter
@@ -40,6 +41,19 @@ trait Filter
             $this->addError($this->getField(), $this->getMessage('empty'));
         }
         return $this;
+    }
+    /**
+     * file function.
+     *
+     * @return Manzowa\Validator\Type\FileType
+     */
+    public function file(
+        int $maxSizeFile = 1048576,  
+        array $mimes = []
+    ) : FileType {
+        $filetype = new FileType($maxSizeFile, $mimes);
+        $filetype->setValidator($this);
+        return $filetype;
     }
 
     /**
@@ -106,6 +120,7 @@ trait Filter
 
     /**
      * Validate isFile upload.
+     * @deprecated version v1.0.5
      * 
      * @param int $max_size_file -
      * @param array $mimes
@@ -184,49 +199,12 @@ trait Filter
                 $rowFile[] = $uploadedFiled;
             }
         }  
+
         
         $this->inputs[$this->getField()] = $rowFile;
         return $this;
     }
-
-    /**
-     * Add an error message for a given field
-     *
-     * @param string $field   The field name
-     * @param string $message The error message
-     *
-     * @return self
-     */
-    protected function addError(string $field, string $message): self
-    {
-        if ($field && $this->isNotAlreadyError()) {
-            $this->errors[$field] = $this->match($message, $field);
-        }
-        return $this;
-    }
-
-    /**
-     * Check if there are any errors for the current field.
-     *
-     * @return bool
-     */
-    protected function isNotAlreadyError(): bool
-    {
-        return !$this->hasError($this->getField());
-    }
-
-    /**
-     * Check if the field has any errors.
-     *
-     * @param string $field Field name to check
-     *
-     * @return bool
-     */
-    protected function hasError(string $field): bool
-    {
-        return isset($this->errors[$field]);
-    }
-
+    
     /**
      * Replace placeholders in the error message with actual values.
      *

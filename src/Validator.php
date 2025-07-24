@@ -127,11 +127,17 @@ class Validator implements ArrayAccess, Iterator, Countable
      *
      * @return self
      */
-    protected function setField(string $field): self
+    public function setField(string $field): self
     {
         if ($field) {
             $this->field = $field;
         }
+        return $this;
+    }
+
+    public function setResult(string $key, mixed $value): self 
+    {
+        $this->results[$key]= $value;
         return $this;
     }
 
@@ -143,7 +149,7 @@ class Validator implements ArrayAccess, Iterator, Countable
      *
      * @return self
      */
-    protected function addInput(string $name): self
+    public function addInput(string $name): self
     {
         if ($name) {
             $inputValue = $this->inputed(
@@ -155,6 +161,10 @@ class Validator implements ArrayAccess, Iterator, Countable
         }
         return $this;
     }
+    public function setInput(string $name, mixed $value): self {
+        $this->inputs[$name] = $value;
+        return $this;
+    }
     /**
      * setInputs data to the filter.
      *
@@ -162,7 +172,7 @@ class Validator implements ArrayAccess, Iterator, Countable
      *
      * @return self
      */
-    protected function setInputs(array $inputs = []): self
+    public function setInputs(array $inputs = []): self
     {
         $this->inputs = $inputs;
         return $this;
@@ -174,7 +184,7 @@ class Validator implements ArrayAccess, Iterator, Countable
      *
      * @return string The field name
      */
-    protected function getField(): string
+    public function getField(): string
     {
         return $this->field;
     }
@@ -185,7 +195,7 @@ class Validator implements ArrayAccess, Iterator, Countable
      *
      * @return mixed The value of the current field
      */
-    protected function getValue()
+    public function getValue()
     {
         return $this->inputs[$this->getField()] ?? "";
     }
@@ -197,7 +207,7 @@ class Validator implements ArrayAccess, Iterator, Countable
      *
      * @return string The field value
      */
-    protected function getTampon(?string $name = ""): string
+    public function getTampon(?string $name = ""): string
     {
         return $name ? ($this->inputs[$name] ?? "") : "";
     }
@@ -209,7 +219,7 @@ class Validator implements ArrayAccess, Iterator, Countable
      *
      * @return string The error message for the field
      */
-    protected function getMessage(?string $name = ""): string
+    public function getMessage(?string $name = ""): string
     {
         return $this->messages[$name] ?? "";
     }
@@ -219,7 +229,7 @@ class Validator implements ArrayAccess, Iterator, Countable
      *
      * @return self
      */
-    protected function get(): self
+    public function get(): self
     {
         if (empty($this->errors)) {
             $this->results[$this->getField()] = $this->getValue();
@@ -265,7 +275,7 @@ class Validator implements ArrayAccess, Iterator, Countable
      *
      * @return self
      */
-    protected function addError(string $name, string $message): self
+    public function addError(string $name, string $message): self
     {
         if ($name) {
             $this->errors[$name] = $this->match($message, $name);
@@ -280,7 +290,7 @@ class Validator implements ArrayAccess, Iterator, Countable
      *
      * @return bool True if the field has an error, false otherwise
      */
-    protected function hasError(string $name): bool
+    public function hasError(string $name): bool
     {
         return isset($this->errors[$name]);
     }
@@ -309,7 +319,7 @@ class Validator implements ArrayAccess, Iterator, Countable
      *
      * @return self
      */
-    protected function setRequestMethod(string $method): self
+    public function setRequestMethod(string $method): self
     {
         $this->requestMethod = $method;
         return $this;
@@ -320,7 +330,7 @@ class Validator implements ArrayAccess, Iterator, Countable
      *
      * @return bool True if no error exists for the field, false otherwise
      */
-    protected function isNotAlreadyError(): bool
+    public function isNotAlreadyError(): bool
     {
         return !$this->hasError($this->getField());
     }
@@ -500,7 +510,7 @@ class Validator implements ArrayAccess, Iterator, Countable
      * @param string $rule The rule to apply (e.g., "required", "minLength")
      * @param mixed $param The parameter for the rule (e.g., minimum length)
      */
-    protected function applyRule(string $field, string $rule, $param): void
+    public function applyRule(string $field, string $rule, $param): void
     {
         switch ($rule) {
             case 'required':
